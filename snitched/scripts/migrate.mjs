@@ -12,6 +12,64 @@ import pg from "pg";
 const DB_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "db");
 const url = process.env.DATABASE_URL;
 
+// Postgres runs a multi-statement query string as one implicit transaction, so
+// a `no-transaction` file has to be sent one statement at a time — skipping the
+// explicit `begin` is not enough. Splitting has to respect quotes, dollar-quoted
+// bodies and comments so a semicolon inside one never ends a statement.
+function splitStatements(sql) {
+  const statements = [];
+  let current = "";
+  let i = 0;
+
+  while (i < sql.length) {
+    const rest = sql.slice(i);
+    const ch = sql[i];
+    let end = -1;
+
+    if (rest.startsWith("--")) {
+      const nl = sql.indexOf("\n", i);
+      end = nl === -1 ? sql.length : nl;
+    } else if (rest.startsWith("/*")) {
+      const close = sql.indexOf("*/", i + 2);
+      end = close === -1 ? sql.length : close + 2;
+    } else if (/^\$(?:[A-Za-z_]\w*)?\$/.test(rest)) {
+      const tag = /^\$(?:[A-Za-z_]\w*)?\$/.exec(rest)[0];
+      const close = sql.indexOf(tag, i + tag.length);
+      end = close === -1 ? sql.length : close + tag.length;
+    } else if (ch === "'" || ch === '"') {
+      let j = i + 1;
+      while (j < sql.length) {
+        if (sql[j] === ch) {
+          if (sql[j + 1] === ch) j += 2;
+          else {
+            j++;
+            break;
+          }
+        } else j++;
+      }
+      end = j;
+    } else if (ch === ";") {
+      statements.push(current);
+      current = "";
+      i++;
+      continue;
+    }
+
+    if (end === -1) {
+      current += ch;
+      i++;
+    } else {
+      current += sql.slice(i, end);
+      i = end;
+    }
+  }
+  statements.push(current);
+
+  const hasSql = (s) =>
+    s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--[^\n]*/g, "").trim() !== "";
+  return statements.map((s) => s.trim()).filter(hasSql);
+}
+
 if (!url) {
   console.error("DATABASE_URL is not set. Is it in snitched/.env.local?");
   process.exit(1);
@@ -67,8 +125,12 @@ for (const file of files) {
   process.stdout.write(`  apply  ${file}${noTx ? "  (no transaction)" : ""} ... `);
 
   try {
-    if (!noTx) await client.query("begin");
-    await client.query(body);
+    if (noTx) {
+      for (const statement of splitStatements(body)) await client.query(statement);
+    } else {
+      await client.query("begin");
+      await client.query(body);
+    }
     await client.query("insert into _migrations (name) values ($1)", [file]);
     if (!noTx) await client.query("commit");
     console.log("ok");

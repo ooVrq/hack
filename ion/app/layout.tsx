@@ -13,7 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+<<<<<<< HEAD:snitched/app/layout.tsx
   title: "iOn",
+=======
+  title: "Ion",
+>>>>>>> 3465e71d1f178cfe399ff14086db44d2fe6d37c0:ion/app/layout.tsx
   description: "Tell us what you're waiting for. We'll refresh the page for you.",
 };
 

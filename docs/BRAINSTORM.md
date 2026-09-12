@@ -20,7 +20,7 @@ watch website changes
 ## Website urls
     KeepAnIon.tech
     getdibs.tech
-    snitched.tech
+    ion.tech
 
 
 ## FEATURES

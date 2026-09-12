@@ -71,13 +71,13 @@ function splitStatements(sql) {
 }
 
 if (!url) {
-  console.error("DATABASE_URL is not set. Is it in snitched/.env.local?");
+  console.error("DATABASE_URL is not set. Is it in ion/.env.local?");
   process.exit(1);
 }
 if (url.includes("SERVICE_ID") || url.includes("PASSWORD@")) {
   console.error(
     "DATABASE_URL is still the placeholder from .env.example.\n" +
-      "Paste the real connection string from the TigerData console into snitched/.env.local.",
+      "Paste the real connection string from the TigerData console into ion/.env.local.",
   );
   process.exit(1);
 }

@@ -16,8 +16,8 @@ Hours are relative to kickoff (H0). **A** = frontend-leaning, **B** = backend-le
 
 - `npx create-next-app@latest` — TypeScript, App Router, Tailwind.
 - **Deploy to Vercel immediately.** Empty page, real URL. Do it now.
-- Create Neon/Supabase DB, Resend account, Gemini API key. Fill `.env.local` from `.env.example` and share the values in a private channel.
-- Paste `docs/DATA_MODEL.md` schema into the DB. Commit the migration.
+- Create TigerData Cloud service, Resend account, Gemini API key. Fill `.env.local` from `.env.example` and share the values in a private channel.
+- Paste `docs/DATA_MODEL.md` schema into the DB. Commit the migration. Apply the hypertable, continuous aggregate and retention policy in the same pass — they are three statements and they are what makes this a TigerData project rather than a project that happens to store rows.
 - Read `docs/API.md` out loud to each other. Change anything you disagree with **now**.
 - Set up the external cron pinger (cron-job.org) pointing at `/api/cron/tick` — it can 404 for the next six hours, that's fine.
 

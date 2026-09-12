@@ -44,7 +44,7 @@ npm run dev
 
 ## Stack
 
-Next.js (App Router, TypeScript) · Tailwind · Postgres (Neon) · Auth.js · Resend · Google Gemini · Vercel
+Next.js (App Router, TypeScript) · Tailwind · Postgres (TigerData) · Auth.js · Resend · Google Gemini · Vercel
 
 ## Team
 

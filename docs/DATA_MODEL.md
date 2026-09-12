@@ -113,8 +113,11 @@ create table snapshots (
 );
 create index snapshots_watch_idx on snapshots (watch_id, fetched_at desc);
 
+-- checks is a TimescaleDB hypertable — see "Using TigerData properly" below.
+-- NOTE THE PRIMARY KEY: a hypertable's unique indexes must contain the
+-- partitioning column, so it is (created_at, id), never id alone.
 create table checks (
-  id            uuid primary key default gen_random_uuid(),
+  id            uuid not null default gen_random_uuid(),
   watch_id      uuid not null references watches(id) on delete cascade,
   changed       boolean not null default false,
   matched       boolean not null default false,
@@ -125,14 +128,20 @@ create table checks (
   status_code   int,
   duration_ms   int,
   error         text,
-  created_at    timestamptz not null default now()
+  created_at    timestamptz not null default now(),
+  primary key (created_at, id)
+) with (
+  tsdb.hypertable,
+  tsdb.partition_column = 'created_at'
 );
 create index checks_watch_idx on checks (watch_id, created_at desc);
 
 create table notifications (
   id                  uuid primary key default gen_random_uuid(),
   watch_id            uuid not null references watches(id) on delete cascade,
-  check_id            uuid references checks(id) on delete set null,
+  -- plain uuid, NOT a foreign key: `checks` is a hypertable whose primary key
+  -- is (created_at, id), so `id` alone is not a unique target to reference.
+  check_id            uuid,
   channel             text not null default 'email',
   recipient           text not null,
   subject             text not null,
@@ -141,6 +150,49 @@ create table notifications (
   sent_at             timestamptz
 );
 ```
+
+## Using TigerData properly
+
+TigerData Cloud is managed Postgres with the TimescaleDB extension, so everything above is ordinary SQL and nothing about the app has to change. But "we used the sponsor's product as a plain database" is a weak answer when a TigerData judge asks what you did with it. The honest, non-gimmicky answer is that **`checks` is genuinely a time-series table** — append-only, one row per watch per check, ~288 rows/day/watch, and always queried as "the recent checks for this watch, newest first." That is exactly the shape hypertables exist for.
+
+Three features, each worth about fifteen minutes:
+
+**1. Hypertable** (in the `create table` above). Postgres partitions `checks` into time chunks automatically. Your timeline query — the most-run query in the app — only touches the chunks in range.
+
+**2. Continuous aggregate** — a materialized view that keeps itself up to date. This is what makes the dashboard sparkline instant instead of a `count(*)` over every check ever run:
+
+```sql
+create materialized view checks_hourly
+with (timescaledb.continuous) as
+select
+  watch_id,
+  time_bucket('1 hour', created_at) as bucket,
+  count(*)                              as checks,
+  count(*) filter (where changed)       as changes,
+  count(*) filter (where matched)       as matches,
+  avg(duration_ms)::int                 as avg_ms
+from checks
+group by watch_id, bucket;
+
+select add_continuous_aggregate_policy('checks_hourly',
+  start_offset      => interval '3 days',
+  end_offset        => interval '1 hour',
+  schedule_interval => interval '15 minutes');
+```
+
+**3. Retention policy** — this replaces hand-written cleanup entirely. One line, and old check rows drop themselves forever:
+
+```sql
+select add_retention_policy('checks', interval '14 days');
+```
+
+The aggregate survives the retention drop, so you keep "this watch has run 41,000 times" as a headline number long after the individual rows are gone. That is a genuinely nice demo detail: deep history, tiny database.
+
+If you have spare time, look at compression (called the columnstore in recent TimescaleDB versions) for chunks older than a day — but treat it as a stretch goal, not a hour-3 task.
+
+> **The gotcha that will cost you an hour if you hit it cold:** a hypertable's primary key and every unique index on it must include the partitioning column. `primary key (id)` on `checks` fails with *"cannot create a unique index without the column"*. That is why the schema above uses `primary key (created_at, id)` and why `notifications.check_id` is a plain uuid instead of a foreign key.
+
+`snapshots` stays an ordinary table — it is low-volume by design (rows only on change), so a hypertable would be ceremony without benefit. Don't hypertable things reflexively; being able to say *why* `checks` is one and `snapshots` isn't is the part that reads as engineering judgment.
 
 ## Storage discipline
 

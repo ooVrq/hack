@@ -21,7 +21,7 @@ flowchart LR
     end
 
     subgraph data["Data"]
-        PG[("Postgres<br/>Neon / Supabase")]
+        PG[("Postgres<br/>TigerData Cloud")]
     end
 
     subgraph external["External"]

@@ -8,7 +8,7 @@ A website change monitor. A user registers a URL + a condition; we poll it, dete
 
 ## Stack
 
-Next.js (App Router, TypeScript) · Tailwind · Postgres (Neon) · Auth.js magic link · Resend · Google Gemini · deployed on Vercel.
+Next.js (App Router, TypeScript) · Tailwind · Postgres (TigerData) · Auth.js magic link · Resend · Google Gemini · deployed on Vercel.
 
 ## Rules
 

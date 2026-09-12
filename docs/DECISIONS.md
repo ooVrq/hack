@@ -11,5 +11,8 @@ One line per decision, with the reason. When someone asks at hour 18 "why are we
 | 5 | Magic-link auth, no passwords | Verifies the email address (required before we send alerts) and removes password handling entirely. Two problems, one task. | 2026-09-12 |
 | 6 | Store normalized text, not raw HTML | Free-tier database. Snapshots only on change, last 10 retained. | 2026-09-12 |
 | 7 | Self-hosted `/demo/job-board` target | A live demo cannot depend on a third-party site changing on cue. | 2026-09-12 |
+| 8 | TigerData Cloud instead of Neon | Hackathon sponsor, and it is plain managed Postgres — the schema did not change. | 2026-09-12 |
+| 9 | `checks` is a hypertable; `snapshots` is not | `checks` is real append-only time-series (288 rows/day/watch); `snapshots` only gets a row when the page actually changed. Hypertabling both would be ceremony. | 2026-09-12 |
+| 10 | Retention policy replaces manual check cleanup | `add_retention_policy` is one line and self-maintaining; the continuous aggregate keeps the lifetime counts after the rows are dropped. | 2026-09-12 |
 
 <!-- Add rows as you go. Cheap to write, expensive to reconstruct later. -->

@@ -6,7 +6,7 @@
 ## UI
     https://cobalt.tools
     https://monkeytype.com
-
+    https://monochrome.tf
 
 # What do we want to use
 - gemini api    
@@ -16,6 +16,12 @@
 
 # IDEA 1
 watch website changes
+
+## Website urls
+    KeepAnIon.tech
+    getdibs.tech
+    snitched.tech
+
 
 ## FEATURES
     Website scraper
@@ -34,3 +40,4 @@ watch website changes
         contact info
         website information
         past versions of websites
+        changes required

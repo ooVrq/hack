@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Header } from "@/components/header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+<<<<<<< HEAD:snitched/app/layout.tsx
+  title: "iOn",
+=======
   title: "Ion",
+>>>>>>> 3465e71d1f178cfe399ff14086db44d2fe6d37c0:ion/app/layout.tsx
   description: "Tell us what you're waiting for. We'll refresh the page for you.",
 };
 
@@ -25,8 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
-        <Header />
-        <div className="flex flex-1 flex-col">{children}</div>
+        {children}
       </body>
     </html>
   );

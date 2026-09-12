@@ -1,16 +1,45 @@
-import Link from "next/link";
+import { WatchForm } from "./watch-form";
 
-const PIPELINE = [
-  { step: "Fetch", detail: "SSRF-guarded, 15s timeout, 2MB cap" },
-  { step: "Normalize", detail: "strip scripts, nav, ads, timestamps, counters" },
-  { step: "Hash", detail: "unchanged hash means we stop, for free" },
-  { step: "Diff + rules", detail: "keyword, regex, or any-change match" },
-  { step: "Judge", detail: "Gemini reads only the diff, on ambiguous cases" },
-  { step: "Notify", detail: "one email, then a cooldown" },
-] as const;
+function EyeMark() {
+  return (
+    <svg
+      viewBox="0 0 124 68"
+      aria-hidden="true"
+      className="w-32 text-foreground sm:w-44"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 35 C 30 9, 88 7, 114 33" />
+      <path d="M114 33 C 92 57, 31 59, 6 35" />
+      <circle cx="59" cy="33" r="9.5" strokeWidth={4} />
+      <circle cx="55.5" cy="29.5" r="2" fill="currentColor" stroke="none" />
+      <path
+        d="M53 15 L50 6 M66 15 L68 6 M78 16 L84 9 M90 19 L98 14 M100 23 L109 20"
+        strokeWidth={3.5}
+      />
+    </svg>
+  );
+}
+
+function Wordmark() {
+  return (
+    <div className="flex items-center justify-center">
+      <EyeMark />
+      <span className="sr-only">iOn</span>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
+<<<<<<< HEAD:snitched/app/page.tsx
+    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-16 px-6 py-20">
+      <Wordmark />
+      <WatchForm />
+=======
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-24 px-6 py-24">
       <section className="flex flex-col gap-6">
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
@@ -59,6 +88,7 @@ export default function Home() {
           ))}
         </ol>
       </section>
+>>>>>>> 3465e71d1f178cfe399ff14086db44d2fe6d37c0:ion/app/page.tsx
     </main>
   );
 }

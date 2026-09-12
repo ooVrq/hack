@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Watchtower",
+  title: "Ion",
   description: "Tell us what you're waiting for. We'll refresh the page for you.",
 };
 

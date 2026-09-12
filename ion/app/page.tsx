@@ -19,7 +19,7 @@ export default function Home() {
           We&apos;ll refresh the page for you.
         </h1>
         <p className="max-w-xl text-lg leading-8 text-muted">
-          Give Watchtower a URL and describe the change in plain English. It
+          Give Ion a URL and describe the change in plain English. It
           polls the page, detects when the change actually happens, and
           emails you within a minute — with the exact sentence that changed
           and a link straight to it.

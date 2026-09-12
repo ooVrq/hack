@@ -3,7 +3,7 @@ import pg from "pg";
 
 const url = process.env.DATABASE_URL;
 if (!url || url.includes("SERVICE_ID")) {
-  console.error("DATABASE_URL missing or still the placeholder in snitched/.env.local");
+  console.error("DATABASE_URL missing or still the placeholder in ion/.env.local");
   process.exit(1);
 }
 

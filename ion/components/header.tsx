@@ -8,7 +8,7 @@ export function Header() {
           href="/"
           className="font-mono text-sm font-medium tracking-tight text-foreground"
         >
-          watchtower
+          ion
         </Link>
         <nav className="flex items-center gap-6 text-sm text-muted">
           <Link

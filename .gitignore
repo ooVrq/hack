@@ -1,0 +1,41 @@
+# deps
+node_modules/
+.pnp
+.pnp.js
+
+# next
+.next/
+out/
+build/
+dist/
+
+# env
+.env
+.env.local
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# os
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# test/coverage
+coverage/
+.playwright/
+test-results/
+
+# misc
+.idea/
+.vscode/*
+!.vscode/extensions.json

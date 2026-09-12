@@ -1,4 +1,4 @@
-# Ion
+# iOn
 
 *HackWesTX 2026*
 
@@ -6,7 +6,7 @@
 
 You're waiting on an internship to open, a course to free up a seat, a restock, a ticket drop. You don't know when it happens, so you refresh the page fifteen times a day and hope you aren't asleep when it does.
 
-Ion watches instead. Give it a URL and describe the change in plain English. It polls the page, detects when the change actually happens, and emails you within a minute — with the exact sentence that changed and a link straight to it.
+iOn watches instead. Give it a URL and describe the change in plain English. It polls the page, detects when the change actually happens, and emails you within a minute — with the exact sentence that changed and a link straight to it.
 
 ## How it works
 

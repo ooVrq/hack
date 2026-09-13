@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Dialog } from "@/components/dialog";
+import type { ApiError, CreateWatchInput, CreateWatchResponse } from "@/lib/types";
 
 const BAR =
-  "relative block w-full border border-border bg-transparent px-6 py-4 font-mono text-base text-foreground transition-colors duration-150 placeholder:text-muted focus:z-10 focus:border-foreground focus:outline-none";
+  "relative block w-full border border-border bg-transparent px-6 py-4 font-mono text-base text-foreground transition-colors duration-150 placeholder:text-muted focus:z-10 focus:border-foreground focus:outline-none disabled:opacity-50";
+
+const DIALOG_BAR =
+  "flex-1 border border-border bg-transparent px-4 py-3 font-mono text-sm text-foreground transition-colors duration-150 hover:border-foreground focus:z-10 focus:border-foreground focus:outline-none";
 
 const FIELDS = [
   { id: "url", type: "url", label: "URL to watch", placeholder: "enter url" },
@@ -37,9 +43,33 @@ function Reveal({ show, children }: { show: boolean; children: ReactNode }) {
   );
 }
 
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidEmail(value: string): boolean {
+  const at = value.indexOf("@");
+  if (at <= 0 || at === value.length - 1) return false;
+  const domain = value.slice(at + 1);
+  const dot = domain.indexOf(".");
+  return dot > 0 && dot < domain.length - 1;
+}
+
+type DialogState =
+  | { kind: "info"; title: string; message: string; focusRow?: number }
+  | { kind: "robots"; title: string; message: string };
+
 export function WatchForm() {
+  const router = useRouter();
   const [values, setValues] = useState(["", "", ""]);
   const [step, setStep] = useState(0);
+  const [pending, setPending] = useState(false);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   const submit = useRef<HTMLButtonElement>(null);
 
@@ -58,11 +88,95 @@ export function WatchForm() {
     else setStep(row + 1);
   };
 
+  const openInfoDialog = (title: string, message: string, focus?: number) =>
+    setDialog({ kind: "info", title, message, focusRow: focus });
+
+  const closeDialog = () => {
+    const row = dialog?.kind === "info" ? dialog.focusRow : undefined;
+    setDialog(null);
+    if (row !== undefined) focusRow(row);
+  };
+
+  const validate = (): boolean => {
+    if (!isValidUrl(values[0])) {
+      openInfoDialog(
+        "check that again",
+        "that doesn't look like a web address — include http:// or https://",
+        0,
+      );
+      return false;
+    }
+    if (values[1].trim() === "") {
+      openInfoDialog("check that again", "tell us what you're watching for", 1);
+      return false;
+    }
+    if (!isValidEmail(values[2])) {
+      openInfoDialog("check that again", "that doesn't look like an email address", 2);
+      return false;
+    }
+    return true;
+  };
+
+  const submitWatch = async (overrideRobots: boolean) => {
+    const body: CreateWatchInput = {
+      url: values[0],
+      condition: values[1],
+      email: values[2],
+      ...(overrideRobots ? { overrideRobots: true } : {}),
+    };
+
+    setPending(true);
+    try {
+      const res = await fetch("/api/watches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.status === 201) {
+        const data = (await res.json()) as CreateWatchResponse;
+        router.push(`/w/${data.id}/created`);
+        return;
+      }
+
+      const data = (await res.json()) as ApiError;
+      const { code, message } = data.error;
+
+      if (res.status === 409 && code === "robots_disallowed") {
+        setDialog({
+          kind: "robots",
+          title: "this site asks bots to stay out",
+          message:
+            "This site's robots.txt asks automated visitors not to read this page. You can keep watching it anyway, but KeepAnIOn.tech is not responsible for any rules you break by doing so.",
+        });
+        return;
+      }
+
+      const focus =
+        code === "invalid_url"
+          ? 0
+          : code === "invalid_condition"
+            ? 1
+            : code === "invalid_email"
+              ? 2
+              : undefined;
+      openInfoDialog("couldn't start watching", message, focus);
+    } catch {
+      openInfoDialog("couldn't start watching", "couldn't reach the server — try again");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (pending) return;
+    if (!validate()) return;
+    void submitWatch(false);
+  };
+
   return (
-    <form
-      className="flex flex-col"
-      onSubmit={(e) => e.preventDefault()} // no API yet; don't navigate away
-    >
+    <form className="flex flex-col" onSubmit={handleSubmit}>
       {FIELDS.map((field, i) => {
         const row = (
           <>
@@ -77,6 +191,7 @@ export function WatchForm() {
               name={field.id}
               type={field.type}
               value={values[i]}
+              disabled={pending}
               onChange={(e) =>
                 setValues((prev) =>
                   prev.map((v, j) => (j === i ? e.target.value : v)),
@@ -106,11 +221,47 @@ export function WatchForm() {
         <button
           ref={submit}
           type="submit"
-          className={`${BAR} hover:bg-foreground hover:text-background`}
+          disabled={pending}
+          className={`${BAR} hover:bg-foreground hover:text-background disabled:hover:bg-transparent disabled:hover:text-foreground`}
         >
-          keep an eye on
+          {pending ? "checking the page…" : "keep an eye on"}
         </button>
       </Reveal>
+
+      <Dialog
+        open={dialog !== null}
+        onClose={closeDialog}
+        title={dialog?.title ?? ""}
+        actions={
+          dialog?.kind === "robots" ? (
+            <>
+              <button type="button" className={DIALOG_BAR} onClick={closeDialog}>
+                go back
+              </button>
+              <button
+                type="button"
+                className={`${DIALOG_BAR} hover:bg-foreground hover:text-background`}
+                onClick={() => {
+                  setDialog(null);
+                  void submitWatch(true);
+                }}
+              >
+                watch it anyway
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className={`${DIALOG_BAR} hover:bg-foreground hover:text-background`}
+              onClick={closeDialog}
+            >
+              ok
+            </button>
+          )
+        }
+      >
+        {dialog?.message}
+      </Dialog>
     </form>
   );
 }

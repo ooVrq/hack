@@ -7,16 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "db:verify": "node --env-file=.env.local scripts/verify.mjs",
     "ai:check": "node --env-file=.env.local scripts/gemini-check.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
+    "cheerio": "^1.2.0",
     "next": "16.3.5",
     "pg": "^8.23.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -27,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

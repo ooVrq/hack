@@ -35,16 +35,23 @@ The AI is the judge, not the scraper. That's what makes checking every minute af
 ## Getting started
 
 ```bash
-cp .env.example .env.local   # fill in DATABASE_URL, RESEND_API_KEY, GEMINI_API_KEY, AUTH_SECRET, CRON_SECRET
+cd ion
+cp ../.env.example .env.local   # fill in DATABASE_URL, GEMINI_API_KEY, CRON_SECRET (RESEND_* not needed yet)
 npm install
-npm run db:migrate
-npm run seed                 # a user, 5 watches, 200 checks of fake history
+npm run db:migrate              # applies db/*.sql once each, tracked in _migrations
+npm run db:verify               # proves the hypertable, aggregate and policies exist
+npm run ai:check                # proves the Gemini key, model and structured output work
+npm run test                    # extractor fixture tests
 npm run dev
 ```
 
+Then open `/`, watch `http://localhost:3000/demo/job-board`, and flip it from `/demo/job-board?admin=<CRON_SECRET>`.
+
+Scheduling: point cron-job.org at `POST https://<your-deploy>/api/cron/tick` every minute with header `Authorization: Bearer <CRON_SECRET>`. Vercel Hobby's own cron is once a day, which is why.
+
 ## Stack
 
-Next.js (App Router, TypeScript) · Tailwind · Postgres (TigerData) · Auth.js · Resend · Google Gemini · Vercel
+Next.js 16 (App Router, TypeScript) · Tailwind 4 · Postgres + TimescaleDB (TigerData) · Google Gemini (`@google/genai`) · Resend (planned) · Vercel
 
 ## Team
 

@@ -140,7 +140,9 @@ Decide whether this change satisfies the condition.`;
       model: MODEL,
       input,
       system_instruction: SYSTEM_INSTRUCTION,
-      generation_config: { temperature: 0 },
+      // This SDK's GenerationConfig exposes no temperature; the schema-constrained
+      // output plus the cache above is what keeps verdicts stable.
+      generation_config: { seed: 0 },
       response_format: {
         type: "text",
         mime_type: "application/json",
@@ -148,9 +150,12 @@ Decide whether this change satisfies the condition.`;
       },
     });
 
-    const parsed: unknown = JSON.parse(interaction.output_text);
+    const text = interaction.output_text;
+    if (!text) return { ok: false, reason: "bad_response", detail: "no text in response" };
+
+    const parsed: unknown = JSON.parse(text);
     if (!isVerdict(parsed)) {
-      return { ok: false, reason: "bad_response", detail: interaction.output_text.slice(0, 200) };
+      return { ok: false, reason: "bad_response", detail: text.slice(0, 200) };
     }
 
     const verdict: Verdict = {

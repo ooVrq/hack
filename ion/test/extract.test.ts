@@ -8,6 +8,7 @@ const fixture = (name: string): string =>
 
 const CLOSED = fixture("careers-closed.html");
 const OPEN = fixture("careers-open.html");
+const ONEBLOCK = fixture("careers-oneblock.html");
 
 describe("extract", () => {
   it("keeps the listing and drops the page furniture", () => {
@@ -55,5 +56,30 @@ describe("extract", () => {
 
   it("extracts nothing from a page that renders itself with JavaScript", () => {
     expect(extract(fixture("js-shell.html")).text).toBe("");
+  });
+
+  // The byline cleaner used to run to the end of the chunk, so on a page whose
+  // content is one long block it deleted everything after the word "updated".
+  it("keeps a long block that mentions being updated mid-sentence", () => {
+    const { text } = extract(ONEBLOCK);
+
+    expect(text).toContain("Our handbook was updated recently");
+    expect(text).toContain("Applications are currently closed.");
+    expect(text).toContain("Apply Now");
+    expect(text).toContain("every candidate hears back either way."); // the last words of the block
+  });
+
+  it("still strips a real trailing byline", () => {
+    const { text } = extract(ONEBLOCK);
+    expect(text).not.toContain("Updated:");
+    expect(text).not.toContain("3 March 2026");
+  });
+
+  it("hashes the same when only the byline's date changes", () => {
+    const baseline = extract(ONEBLOCK).hash;
+    const later = ONEBLOCK.replace("Updated: 3 March 2026", "Updated: 9 April 2027");
+
+    expect(later).not.toBe(ONEBLOCK);
+    expect(extract(later).hash).toBe(baseline);
   });
 });

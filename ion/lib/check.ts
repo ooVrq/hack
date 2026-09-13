@@ -63,7 +63,10 @@ export async function runCheck(
 
   const response = await safeFetch(watch.url);
   if (!response.ok) {
-    return recordFailure(watch, `${response.code}: ${response.message}`, response.status ?? null, startedAt);
+    // detail, when there is one, is the raw throw — more use here than the
+    // sentence the form gets.
+    const reason = response.detail ?? response.message;
+    return recordFailure(watch, `${response.code}: ${reason}`, response.status ?? null, startedAt);
   }
 
   const { text, hash } = extract(response.html);

@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 const Body = z.object({
   url: z
     .string()
+    .trim()
     .max(2048)
     .refine((value) => {
       try {
@@ -20,7 +21,7 @@ const Body = z.object({
       }
     }),
   condition: z.string().trim().min(1).max(500),
-  email: z.email(),
+  email: z.string().trim().pipe(z.email()),
   overrideRobots: z.boolean().optional(),
 });
 
@@ -69,6 +70,9 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  // The URL the user typed is stored on purpose, not page.finalUrl: re-following
+  // a redirect each poll costs one request, while pinning the watch to today's
+  // redirect target breaks when a site 302s temporarily to consent or login.
   const id = await createWatch({
     url,
     condition,

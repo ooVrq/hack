@@ -12,7 +12,14 @@ import { lookup } from "node:dns/promises";
 
 export type FetchResult =
   | { ok: true; status: number; html: string; finalUrl: string }
-  | { ok: false; code: "blocked_host" | "unreachable"; message: string; status?: number };
+  | {
+      ok: false;
+      code: "blocked_host" | "unreachable";
+      message: string;
+      status?: number;
+      /** Raw failure text for the checks timeline. Developer-facing; never shown in the UI. */
+      detail?: string;
+    };
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS ?? 15_000);
 const MAX_BYTES = Number(process.env.MAX_RESPONSE_BYTES ?? 2_000_000);
@@ -132,16 +139,39 @@ export async function safeFetch(url: string, timeoutMs: number = DEFAULT_TIMEOUT
         continue;
       }
 
+      // A site that turns bots away is not a site that is down, and the user can
+      // act on the difference — often another page on the same site lets us in.
+      if (res.status === 403 || res.status === 429) {
+        return {
+          ok: false,
+          code: "unreachable",
+          status: res.status,
+          message: `The site blocks automated visits (HTTP ${res.status}). It isn't down — another page there may work.`,
+        };
+      }
+
       if (res.status < 200 || res.status > 299) {
         return { ok: false, code: "unreachable", status: res.status, message: `The site answered with HTTP ${res.status}.` };
       }
 
       return { ok: true, status: res.status, html: await readCapped(res, controller), finalUrl: target.href };
     } catch (err) {
-      const message = controller.signal.aborted
-        ? `The site didn't respond within ${Math.round(timeoutMs / 1000)}s.`
-        : `We couldn't reach the site: ${err instanceof Error ? err.message : String(err)}`;
-      return { ok: false, code: "unreachable", message };
+      if (controller.signal.aborted) {
+        return {
+          ok: false,
+          code: "unreachable",
+          message: `The site didn't respond within ${Math.round(timeoutMs / 1000)}s.`,
+        };
+      }
+      // Whatever fetch threw reads like a stack trace ("Request cannot be
+      // constructed from a URL that includes credentials: …"), so it goes to
+      // the timeline as detail and the user gets a sentence.
+      return {
+        ok: false,
+        code: "unreachable",
+        message: "We couldn't reach the site. Check the address, then try opening the page in a browser.",
+        detail: err instanceof Error ? err.message : String(err),
+      };
     } finally {
       clearTimeout(timer);
     }

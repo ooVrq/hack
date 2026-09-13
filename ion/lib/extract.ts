@@ -49,12 +49,16 @@ const MARK = "␟";
 /** Self-updating page furniture. Each of these would otherwise change every hash. */
 const CLEANERS: RegExp[] = [
   /\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?/g,
-  /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(st|nd|rd|th)?,?\s+\d{4}\b/gi,
+  /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(uary|ruary|ch|il|e|y|ust|t|tember|ober|ember)?\.?\s+\d{1,2}(st|nd|rd|th)?,?\s+\d{4}\b/gi,
   /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,
   /\b\d{4}-\d{2}-\d{2}\b/g,
   /\b\d{1,2}:\d{2}(:\d{2})?\s*([ap]\.?m\.?)?/gi,
   /\b\d+\s+(second|minute|hour|day|week|month)s?\s+ago\b/gi,
-  /(updated|posted|published|last modified)\s*(on|at)?[:\s]+.*$/gi,
+  // The label, plus whatever the date cleaners above left behind of its date.
+  // The 40-char cap is load-bearing: a byline ends its chunk, so bounding the
+  // tail means an "updated" in mid-sentence prose no longer reaches $ and the
+  // cleaner declines to match at all instead of eating the rest of the chunk.
+  /(updated|posted|published|last modified)\s*(on|at)?[:\s]+.{0,40}$/gi,
   /\d[\d,]*\s*(views?|likes?|comments?|shares?|people\s+(are\s+)?viewing)/gi,
   /[A-Za-z0-9_-]{24,}/g, // nonces, CSRF tokens, cache-busting ids
 ];

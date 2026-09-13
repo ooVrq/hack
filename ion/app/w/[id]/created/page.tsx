@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { EyeMark } from "@/components/eye-mark";
 import { getWatchDetail } from "@/lib/watches";
 
 const BAR =
@@ -19,8 +20,19 @@ export default async function CreatedPage({
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-10 px-6 py-20">
       <div className="flex flex-col gap-6 text-center">
+        <div className="flex justify-center">
+          <EyeMark />
+        </div>
         <h1 className="text-2xl text-foreground">
-          we’re keeping an eye on <span className="text-accent">{watch.name}</span>
+          we’re keeping an eye on{" "}
+          <a
+            href={watch.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent underline underline-offset-4 transition-colors duration-150 hover:text-foreground"
+          >
+            {watch.name}
+          </a>
         </h1>
 
         <div className="border border-border bg-surface px-6 py-4 text-left font-mono text-sm">
@@ -34,7 +46,9 @@ export default async function CreatedPage({
           this page’s status. we’ll email again the moment the page changes the
           way you described.
         </p>
-        <p className="text-sm text-muted">checking every minute.</p>
+        <p className="text-sm text-muted">
+          checking <span className="underline underline-offset-4">every minute</span>.
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">

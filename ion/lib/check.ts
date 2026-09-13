@@ -108,7 +108,7 @@ export async function runCheck(
     : true;
   const aiSummary = verdict.ok
     ? verdict.verdict.summary
-    : `Page changed (AI judge unavailable: ${verdict.reason})`;
+    : `Page changed (AI judge unavailable: ${verdict.detail?.slice(0, 160) ?? verdict.reason})`;
 
   const cooled =
     !watch.lastNotifiedAt || Date.now() - Date.parse(watch.lastNotifiedAt) >= cooldownSeconds * 1000;

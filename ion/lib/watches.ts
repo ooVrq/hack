@@ -119,8 +119,17 @@ export async function getWatchDetail(id: string): Promise<WatchDetail | null> {
   return { watch: toWatch(row), checks: checks.map(toCheck), latestText: snapshot?.text ?? null };
 }
 
+/** Resuming restarts the countdown from a full interval instead of checking at once. */
 export async function setWatchStatus(id: string, status: WatchStatus): Promise<void> {
-  await query(`update watches set status = $2 where id = $1`, [id, status]);
+  await query(
+    `update watches
+        set status = $2,
+            next_check_at = case when $2 = 'active'
+              then now() + (interval_seconds || ' seconds')::interval
+              else next_check_at end
+      where id = $1`,
+    [id, status],
+  );
 }
 
 export async function getLatestSnapshot(

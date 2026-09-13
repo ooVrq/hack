@@ -6,7 +6,7 @@ What is actually deployed (2026-09-12). Errors are always `{ "error": { "code", 
 |---|---|---|
 | `POST` | `/api/watches` | Create a watch. Fetches the page now (baseline snapshot), checks robots.txt. |
 | `POST` | `/api/watches/:id/check` | **Check now** — runs the full pipeline synchronously, returns the check. |
-| `PATCH` | `/api/watches/:id` | `{ "status": "paused" \| "active" }` |
+| `PATCH` | `/api/watches/:id` | `{ "status": "paused" \| "active" }`. Resuming resets `next_check_at` to now + interval. |
 | `POST`/`GET` | `/api/cron/tick` | Scheduler entry point. `Authorization: Bearer $CRON_SECRET`. Claims ≤25 due watches, concurrency 5. |
 | `POST` | `/api/demo/toggle` | Form post `{ key, open }`; flips `/demo/job-board`. `key` must equal `CRON_SECRET`. |
 

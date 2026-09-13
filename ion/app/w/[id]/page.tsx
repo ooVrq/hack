@@ -33,7 +33,20 @@ function CheckTag({ check }: { check: Check }) {
   return <span className="text-muted">no change</span>;
 }
 
-function CheckRow({ check }: { check: Check }) {
+function OpenLink({ url, name, className }: { url: string; name: string; className: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`text-accent underline underline-offset-4 transition-colors duration-150 hover:text-foreground ${className}`}
+    >
+      open {name} →
+    </a>
+  );
+}
+
+function CheckRow({ check, url, name }: { check: Check; url: string; name: string }) {
   const hasDiff = check.diffAdded.length > 0 || check.diffRemoved.length > 0;
 
   return (
@@ -52,6 +65,7 @@ function CheckRow({ check }: { check: Check }) {
       </div>
 
       {check.aiSummary && <p className="mt-2 text-sm text-foreground">{check.aiSummary}</p>}
+      {check.matched && <OpenLink url={url} name={name} className="mt-2 inline-block text-lg" />}
       {check.aiEvidence && (
         <p className="mt-1 font-mono text-xs text-muted">evidence: {check.aiEvidence}</p>
       )}
@@ -91,6 +105,7 @@ export default async function WatchPage({
   if (!detail) notFound();
 
   const { watch, checks, latestText } = detail;
+  const latestMatch = checks.find((check) => check.matched);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
@@ -102,6 +117,19 @@ export default async function WatchPage({
         <div className="font-mono text-sm text-foreground">“{watch.condition}”</div>
       </header>
 
+      {latestMatch && (
+        <section className="border border-accent px-6 py-5">
+          <p className="font-mono text-xs uppercase tracking-wide text-accent">it happened</p>
+          {latestMatch.aiSummary && (
+            <p className="mt-2 text-sm text-foreground">{latestMatch.aiSummary}</p>
+          )}
+          <OpenLink url={watch.url} name={watch.name} className="mt-3 block text-3xl" />
+          <p className="mt-3 font-mono text-xs text-muted">
+            <RelativeTime date={latestMatch.createdAt} />
+          </p>
+        </section>
+      )}
+
       <section className="flex flex-col gap-3 border-y border-border py-4">
         <div className="flex flex-wrap items-center gap-4 font-mono text-sm text-muted">
           <StatusPill status={watch.status} />
@@ -109,7 +137,12 @@ export default async function WatchPage({
             last checked <RelativeTime date={watch.lastCheckedAt} />
           </span>
           <span>
-            next check <NextCheck date={watch.nextCheckAt} />
+            next check{" "}
+            <NextCheck
+              key={`${watch.status}-${watch.nextCheckAt}`}
+              date={watch.nextCheckAt}
+              status={watch.status}
+            />
           </span>
           <span>every {watch.intervalSeconds}s</span>
         </div>
@@ -131,7 +164,7 @@ export default async function WatchPage({
         ) : (
           <ul>
             {checks.map((check) => (
-              <CheckRow key={check.id} check={check} />
+              <CheckRow key={check.id} check={check} url={watch.url} name={watch.name} />
             ))}
           </ul>
         )}

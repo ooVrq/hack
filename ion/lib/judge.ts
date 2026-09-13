@@ -150,8 +150,9 @@ Decide whether this change satisfies the condition.`;
       },
     },
     // The SDK default retries a 429 with backoff for minutes; a check must not
-    // hang on that. Fail fast and let the caller fall back to any-change.
-    { timeout: 20_000, maxRetries: 1 });
+    // hang on that. No retry either — it only doubles the worst case, and a
+    // watch that falls back to any-change gets a fresh judge a minute later.
+    { timeout: 15_000, maxRetries: 0 });
 
     const text = interaction.output_text;
     if (!text) return { ok: false, reason: "bad_response", detail: "no text in response" };

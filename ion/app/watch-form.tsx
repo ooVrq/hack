@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/dialog";
+import { normalizeUrl } from "./normalize-url";
 import type { ApiError, CreateWatchInput, CreateWatchResponse } from "@/lib/types";
 
 const BAR =
@@ -62,7 +63,7 @@ function isValidEmail(value: string): boolean {
 
 type DialogState =
   | { kind: "info"; title: string; message: string; focusRow?: number }
-  | { kind: "robots"; title: string; message: string };
+  | { kind: "robots"; title: string; message: string; url: string };
 
 export function WatchForm() {
   const router = useRouter();
@@ -82,8 +83,17 @@ export function WatchForm() {
     if (step > 0) focusRow(step);
   }, [step]);
 
+  // Show the user the address we are actually going to watch, the moment they
+  // leave the field or press Enter to move on.
+  const commitUrl = (): string => {
+    const url = normalizeUrl(values[0]);
+    setValues((prev) => [url, prev[1], prev[2]]);
+    return url;
+  };
+
   const advance = (row: number) => {
     if (values[row].trim() === "") return;
+    if (row === 0) commitUrl();
     if (row + 1 <= step) focusRow(row + 1);
     else setStep(row + 1);
   };
@@ -97,8 +107,8 @@ export function WatchForm() {
     if (row !== undefined) focusRow(row);
   };
 
-  const validate = (): boolean => {
-    if (!isValidUrl(values[0])) {
+  const validate = (url: string): boolean => {
+    if (!isValidUrl(url)) {
       openInfoDialog(
         "check that again",
         "that doesn't look like a web address — include http:// or https://",
@@ -117,9 +127,9 @@ export function WatchForm() {
     return true;
   };
 
-  const submitWatch = async (overrideRobots: boolean) => {
+  const submitWatch = async (url: string, overrideRobots: boolean) => {
     const body: CreateWatchInput = {
-      url: values[0],
+      url,
       condition: values[1],
       email: values[2],
       ...(overrideRobots ? { overrideRobots: true } : {}),
@@ -148,6 +158,7 @@ export function WatchForm() {
           title: "this site asks bots to stay out",
           message:
             "This site's robots.txt asks automated visitors not to read this page. You can keep watching it anyway, but KeepAnIOn.tech is not responsible for any rules you break by doing so.",
+          url,
         });
         return;
       }
@@ -171,12 +182,16 @@ export function WatchForm() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (pending) return;
-    if (!validate()) return;
-    void submitWatch(false);
+    const url = commitUrl();
+    if (!validate(url)) return;
+    void submitWatch(url, false);
   };
 
+  // The inputs keep type="url"/"email" for the right mobile keyboard, but
+  // noValidate stops the browser blocking submit with a native tooltip of its
+  // own before handleSubmit runs — our dialogs report every problem.
   return (
-    <form className="flex flex-col" onSubmit={handleSubmit}>
+    <form className="flex flex-col" noValidate onSubmit={handleSubmit}>
       {FIELDS.map((field, i) => {
         const row = (
           <>
@@ -197,6 +212,7 @@ export function WatchForm() {
                   prev.map((v, j) => (j === i ? e.target.value : v)),
                 )
               }
+              onBlur={i === 0 ? commitUrl : undefined}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 e.preventDefault();
@@ -242,8 +258,9 @@ export function WatchForm() {
                 type="button"
                 className={`${DIALOG_BAR} hover:bg-foreground hover:text-background`}
                 onClick={() => {
+                  const { url } = dialog;
                   setDialog(null);
-                  void submitWatch(true);
+                  void submitWatch(url, true);
                 }}
               >
                 watch it anyway
